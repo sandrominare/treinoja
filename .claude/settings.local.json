@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(fsutil reparsepoint *)",
+      "PowerShell(cmd /c \"dir /AL \"C:\\\\Users\\\\sandrominare\\\\OneDrive - Real Moto Pecas Ltda\\\\Área de Trabalho\\\\Sandro\\\\Claude\\\\TreinoJa\"\")",
+      "PowerShell(java *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\sandrominare\\\\OneDrive - Real Moto Pecas Ltda\\\\Área de Trabalho\\\\Sandro\\\\VStudio\\\\Treinopwa\" -Recurse -Force)",
+      "Bash(Select-Object -Property FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(railway *)",
+      "PowerShell(gh auth *)"
+    ]
+  }
+}

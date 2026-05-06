@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TreinoJá</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+
+<body>
+  <!-- Login View -->
+  <div id="view-login" class="view">
+    <div class="home-container">
+      <h1 style="margin-bottom: 40px;">TreinoJá • Login</h1>
+
+      <div class="card" style="width: 100%; max-width: 300px; padding: 20px; box-sizing: border-box;">
+        <div class="input-row" style="flex-direction: column; align-items: stretch;">
+          <label>Usuário</label>
+          <input id="login-user" type="text" style="width: 100%; box-sizing: border-box;" autocapitalize="none">
+        </div>
+        <div class="input-row" style="flex-direction: column; align-items: stretch;">
+          <label>Senha (numérica)</label>
+          <input id="login-pass" type="password" inputmode="numeric" style="width: 100%; box-sizing: border-box;">
+        </div>
+
+        <button class="accent big-btn" onclick="performLogin()">ENTRAR</button>
+        <button class="big-btn" style="background: transparent; border: 1px solid #333; margin-top: 10px;"
+          onclick="showRegister()">CRIAR CONTA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register View -->
+  <div id="view-register" class="view" style="display:none">
+    <div class="home-container">
+      <h1 style="margin-bottom: 40px;">Nova Conta</h1>
+
+      <div class="card" style="width: 100%; max-width: 300px; padding: 20px; box-sizing: border-box;">
+        <div class="input-row" style="flex-direction: column; align-items: stretch;">
+          <label>Usuário</label>
+          <input id="reg-user" type="text" style="width: 100%; box-sizing: border-box;" autocapitalize="none">
+        </div>
+        <div class="input-row" style="flex-direction: column; align-items: stretch;">
+          <label>Senha (min 4 dígitos únicos)</label>
+          <input id="reg-pass" type="password" inputmode="numeric" style="width: 100%; box-sizing: border-box;">
+        </div>
+
+        <button class="accent big-btn" onclick="performRegister()">CADASTRAR</button>
+        <button class="big-btn" style="background: transparent; border: 1px solid #333; margin-top: 10px;"
+          onclick="showView('view-login')">VOLTAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Home View -->
+  <div id="view-home" class="view" style="display:none">
+    <div class="home-container">
+      <div
+        style="width:100%; display:flex; justify-content:flex-end; padding:10px; position:absolute; top:0; left:0; z-index:10; box-sizing: border-box;">
+        <button onclick="logout()" style="font-size:12px; padding:6px 10px;">Sair</button>
+      </div>
+      <div style="margin-bottom: 40px;">
+        <h1 style="font-size: 24px; margin:0;">TreinoJá</h1>
+      </div>
+
+      <div class="card" style="width: 100%; max-width: 300px; padding: 20px; box-sizing: border-box;">
+        <h3 style="margin-top:0; color: var(--muted); text-transform: uppercase; font-size: 12px;">Próximo Treino</h3>
+        <div id="home-next-letter" class="huge-text">-</div>
+        <div id="home-next-name" class="muted-text">-</div>
+        <button class="accent big-btn" onclick="startWorkout()">INICIAR</button>
+      </div>
+
+      <div style="margin-top: 20px; text-align: center; color: var(--muted); font-size: 14px;">
+        <div id="home-stats-count" style="font-weight: bold; color: #fff; font-size: 18px;">0</div>
+        <div>treinos realizados</div>
+        <div id="home-stats-since" style="font-size: 12px; margin-top: 4px;">desde -</div>
+      </div>
+
+      <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 300px;">
+        <button onclick="showHistory()" style="background: transparent; border: 1px solid #333; padding: 12px;">Ver
+          Histórico</button>
+        <button onclick="exportData()" style="background: transparent; border: 1px solid #333; padding: 12px;">💾 Fazer
+          Backup</button>
+        <label style="background: transparent; border: 1px solid #333; padding: 12px; text-align:center; cursor:pointer; border-radius:10px;" for="import-file">
+          📥 Restaurar Backup
+        </label>
+        <input type="file" id="import-file"
+          style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0);"
+          onchange="processImport(this)" accept=".json">
+      </div>
+    </div>
+  </div>
+
+  <!-- History View -->
+  <div id="view-history" class="view" style="display:none">
+    <div class="simple-header">
+      <button onclick="showHome()">Voltar</button>
+      <h2 style="margin:0; font-size: 18px;">Histórico</h2>
+    </div>
+    <div id="history-list" class="container"></div>
+  </div>
+
+  <!-- Workout View -->
+  <div id="view-workout" class="view" style="display:none">
+    <header>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <button onclick="showHome()" style="padding: 6px 10px;">&larr;</button>
+        <h1 style="margin:0">Treino</h1>
+        <div style="margin-left: 10px; font-variant-numeric: tabular-nums;">
+          ⏱️ <span id="workout-time">0:00</span>
+        </div>
+        <button onclick="showEditWorkout()" style="margin-left:auto; font-size:14px; padding: 6px 12px;">✏️
+          Editar</button>
+      </div>
+      <div class="select-row">
+        <label>Treino:</label>
+        <select id="sel-treino"></select>
+        <div class="timer"><span class="small">Descanso</span> <span id="rest-time" class="time">0:00</span>
+          <button id="btn-skip" onclick="skipRest()" style="display:none">Pular</button>
+          <button onclick="toggleFS()">Tela cheia</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="container" class="container"></div>
+
+    <div class="container" style="margin-bottom: 80px;">
+      <button class="finish-btn" onclick="finishWorkout()">FINALIZAR TREINO</button>
+    </div>
+
+    <footer>
+      <button class="accent" onclick="startRest(60)">Descanso 60s</button>
+      <button onclick="startRest(90)">Descanso 90s</button>
+      <button onclick="startRest(120)">Descanso 120s</button>
+    </footer>
+  </div>
+
+  <!-- Edit Workout View -->
+  <div id="view-edit-workout" class="view" style="display:none">
+    <div class="simple-header">
+      <button onclick="showView('view-workout')">Voltar</button>
+      <h2 style="margin:0; font-size: 18px;">Editar Treino</h2>
+    </div>
+    <div id="edit-list" class="container"></div>
+    <div class="container">
+      <button class="accent big-btn" onclick="addExercise()">+ Adicionar Exercício</button>
+    </div>
+  </div>
+
+  <!-- Edit Set Modal -->
+  <div id="modal" class="modal" onclick="if(event.target.id==='modal') closeModal()">
+    <div class="sheet">
+      <h3 id="edit-name">Editar série</h3>
+      <div class="input-row">
+        <label>Carga (kg)</label>
+        <input id="edit-carga" type="number" min="0" step="1" />
+      </div>
+      <div class="input-row">
+        <label>Repetições</label>
+        <input id="edit-reps" type="text" placeholder="ex.: 9-13" />
+      </div>
+      <div class="input-row">
+        <label>Descanso (s)</label>
+        <input id="edit-rest" type="number" min="0" step="5" />
+      </div>
+      <div class="input-row">
+        <label><input id="edit-applyall" type="checkbox" checked /> Aplicar a todas (séries do exercício)</label>
+      </div>
+      <div class="input-row" style="justify-content:flex-end">
+        <button onclick="closeModal()">Cancelar</button>
+        <button id="btn-save" class="accent">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Exercise Modal -->
+  <div id="modal-exercise" class="modal" onclick="if(event.target.id==='modal-exercise') closeExerciseModal()">
+    <div class="sheet">
+      <h3>Exercício</h3>
+      <div class="input-row"><label style="width:60px">Nome</label><input id="ex-name" type="text" style="width:100%"></div>
+      <div class="input-row"><label style="width:60px">Tipo</label><input id="ex-type" type="text" style="width:100%"></div>
+      <div class="input-row"><label style="width:60px">Séries</label><input id="ex-series" type="number"></div>
+      <div class="input-row"><label style="width:60px">Reps</label><input id="ex-reps" type="text"></div>
+      <div class="input-row"><label style="width:60px">Carga</label><input id="ex-carga" type="number"></div>
+      <div class="input-row"><label style="width:60px">Desc.</label><input id="ex-rest" type="number"></div>
+      <div class="input-row"><label style="width:60px">Msg</label><input id="ex-msg" type="text" style="width:100%"></div>
+      <div class="input-row" style="justify-content:flex-end">
+        <button onclick="closeExerciseModal()">Cancelar</button>
+        <button id="btn-save-ex" class="accent">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Rest Timer -->
+  <div id="fs" class="fullscreen" onclick="toggleFS()">
+    <div class="donut-container">
+      <svg class="donut" width="300" height="300" viewBox="0 0 100 100">
+        <circle class="donut-ring" cx="50" cy="50" r="45" fill="transparent" stroke-width="8" />
+        <circle class="donut-segment" cx="50" cy="50" r="45" fill="transparent" stroke-width="8" stroke-dasharray="283"
+          stroke-dashoffset="0" />
+      </svg>
+      <div class="donut-text" id="fs-time">0</div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+
+</html>

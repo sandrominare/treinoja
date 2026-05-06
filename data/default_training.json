@@ -1,0 +1,317 @@
+{
+  "A": {
+    "nome": "Costas/Trapézio + Remo Tabata",
+    "exercicios": [
+      {
+        "nome": "Pulley Alto (Pronada)",
+        "tipo": "Costas",
+        "series": 5,
+        "reps": "9-13",
+        "carga": 54,
+        "descanso": 60,
+        "mensagem": "1ª série aquecimento: 20 repetições, carga leve/moderada."
+      },
+      {
+        "nome": "Pulley Alto (Neutro Triangulo)",
+        "tipo": "Costas",
+        "series": 4,
+        "reps": "9-13",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Remada Baixa (Neutra)",
+        "tipo": "Costas",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 75
+      },
+      {
+        "nome": "Remada (Aberta Máquina)",
+        "tipo": "Costas",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 75
+      },
+      {
+        "nome": "Remada (Cavalinho)",
+        "tipo": "Costas",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 75
+      },
+      {
+        "nome": "Encolhimento (Halteres)",
+        "tipo": "Trapézio",
+        "series": 4,
+        "reps": "10-15",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Simulador de Remo (Tabata)",
+        "tipo": "Cardio",
+        "series": 1,
+        "reps": "20'",
+        "carga": 0,
+        "descanso": 0
+      }
+    ]
+  },
+  "B": {
+    "nome": "Peito + Core + Skillmill",
+    "exercicios": [
+      {
+        "nome": "Crucifixo Reto Máquina",
+        "tipo": "Peito",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 75
+      },
+      {
+        "nome": "Fly (Reto Banco)",
+        "tipo": "Peito",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 75
+      },
+      {
+        "nome": "Supino Inclinado (Barra)",
+        "tipo": "Peito",
+        "series": 4,
+        "reps": "6-10",
+        "carga": 0,
+        "descanso": 90
+      },
+      {
+        "nome": "Supino Declinado (Barra)",
+        "tipo": "Peito",
+        "series": 4,
+        "reps": "6-10",
+        "carga": 0,
+        "descanso": 90
+      },
+      {
+        "nome": "Supino Barra (Reto)",
+        "tipo": "Peito",
+        "series": 4,
+        "reps": "6-10",
+        "carga": 0,
+        "descanso": 90
+      },
+      {
+        "nome": "Abdominal (Máquina)",
+        "tipo": "Core",
+        "series": 4,
+        "reps": "12-15",
+        "carga": 0,
+        "descanso": 45
+      },
+      {
+        "nome": "Skillmill",
+        "tipo": "Cardio",
+        "series": 1,
+        "reps": "30'",
+        "carga": 0,
+        "descanso": 0
+      }
+    ]
+  },
+  "C": {
+    "nome": "Pernas",
+    "exercicios": [
+      {
+        "nome": "Agachamento (Livre Barra)",
+        "tipo": "Pernas",
+        "series": 4,
+        "reps": "6-10",
+        "carga": 0,
+        "descanso": 120
+      },
+      {
+        "nome": "Leg Press 45º",
+        "tipo": "Pernas",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 90
+      },
+      {
+        "nome": "Cadeira Extensora",
+        "tipo": "Quadríceps",
+        "series": 4,
+        "reps": "10-15",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Hack (Drop Decrescente)",
+        "tipo": "Quadríceps",
+        "series": 3,
+        "reps": "10-12",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Afundo (Smith)",
+        "tipo": "Glúteo/Quad",
+        "series": 3,
+        "reps": "10-12",
+        "carga": 0,
+        "descanso": 75
+      },
+      {
+        "nome": "Mesa Flexora",
+        "tipo": "Posterior",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 75
+      },
+      {
+        "nome": "Flexão de Joelhos (Máquina)",
+        "tipo": "Posterior",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 75
+      }
+    ]
+  },
+  "D": {
+    "nome": "Ombros + Abdutores/Adutores + Esteira",
+    "exercicios": [
+      {
+        "nome": "Desenvolvimento (Arnold c/ halteres)",
+        "tipo": "Ombros",
+        "series": 5,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 90
+      },
+      {
+        "nome": "Elevação Lateral Cross Over",
+        "tipo": "Ombros",
+        "series": 4,
+        "reps": "10-15",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Elevação Frontal (Halteres)",
+        "tipo": "Ombros",
+        "series": 4,
+        "reps": "10-15",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Crucifixo Inverso (cross over) (Unilateral)",
+        "tipo": "Ombros",
+        "series": 4,
+        "reps": "10-15",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Abdutor Máquina",
+        "tipo": "Glúteo médio",
+        "series": 4,
+        "reps": "12-15",
+        "carga": 0,
+        "descanso": 45
+      },
+      {
+        "nome": "Adutor Máquina",
+        "tipo": "Adutores",
+        "series": 4,
+        "reps": "12-15",
+        "carga": 0,
+        "descanso": 45
+      },
+      {
+        "nome": "Esteira",
+        "tipo": "Cardio",
+        "series": 1,
+        "reps": "30'",
+        "carga": 0,
+        "descanso": 0
+      }
+    ]
+  },
+  "E": {
+    "nome": "Braços (Bíceps/Tríceps)",
+    "exercicios": [
+      {
+        "nome": "Rosca Direta Halteres",
+        "tipo": "Bíceps",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Rosca (Martelo Máquina)",
+        "tipo": "Bíceps/Antebraço",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Rosca 21 com Barra (W)",
+        "tipo": "Bíceps",
+        "series": 4,
+        "reps": "21",
+        "carga": 0,
+        "descanso": 75,
+        "mensagem": "Rosca 21: 7 meia inferior + 7 meia superior + 7 completas."
+      },
+      {
+        "nome": "Rosca Concentrada",
+        "tipo": "Bíceps",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Tríceps Francês Sentado (Unilateral)",
+        "tipo": "Tríceps",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Tríceps (Coice na Polia)",
+        "tipo": "Tríceps",
+        "series": 4,
+        "reps": "10-15",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Tríceps Testa Cross Over",
+        "tipo": "Tríceps",
+        "series": 4,
+        "reps": "8-12",
+        "carga": 0,
+        "descanso": 60
+      },
+      {
+        "nome": "Tríceps Corda Cross Over (Drop Decrescente)",
+        "tipo": "Tríceps",
+        "series": 3,
+        "reps": "10-12",
+        "carga": 0,
+        "descanso": 60
+      }
+    ]
+  }
+}
