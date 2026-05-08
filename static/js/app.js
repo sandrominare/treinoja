@@ -69,17 +69,20 @@ async function performLogin() {
 function showRegister() {
     document.getElementById('reg-user').value = '';
     document.getElementById('reg-pass').value = '';
+    document.getElementById('reg-academia').value = '';
     showView('view-register');
 }
 
 async function performRegister() {
     const username = document.getElementById('reg-user').value.trim().toLowerCase();
     const password = document.getElementById('reg-pass').value.trim();
+    const academiaRaw = document.getElementById('reg-academia').value.trim();
+    const academia_codigo = academiaRaw ? academiaRaw.toUpperCase() : null;
 
     if (!username) { alert('Preencha o usuário'); return; }
 
     try {
-        await api.post('/api/auth/register', { username, password });
+        await api.post('/api/auth/register', { username, password, academia_codigo });
         alert('Usuário criado com sucesso!');
         showView('view-login');
     } catch (e) {

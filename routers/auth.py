@@ -49,25 +49,25 @@ def verify_token(token: str) -> int:
 
 def validate_password(pwd: str):
     if not re.match(r"^\d+$", pwd):
-        raise HTTPException(400, "A senha deve ser numérica.")
+        raise HTTPException(400, "A senha deve ser numerica.")
     if len(pwd) < 4:
-        raise HTTPException(400, "A senha deve ter pelo menos 4 dígitos.")
+        raise HTTPException(400, "A senha deve ter pelo menos 4 digitos.")
     if len(set(pwd)) != len(pwd):
-        raise HTTPException(400, "A senha não pode ter dígitos repetidos.")
+        raise HTTPException(400, "A senha nao pode ter digitos repetidos.")
 
 
 def get_current_user(
     session: str = Cookie(default=None), db: Session = Depends(get_db)
 ) -> User:
     if not session:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="Nao autenticado")
     try:
         user_id = verify_token(session)
     except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Sessão inválida")
+        raise HTTPException(status_code=401, detail="Sessao invalida")
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=401, detail="Usuário não encontrado")
+        raise HTTPException(status_code=401, detail="Usuario nao encontrado")
     return user
 
 
@@ -79,6 +79,7 @@ class LoginRequest(BaseModel):
 class RegisterRequest(BaseModel):
     username: str
     password: str
+    academia_codigo: str | None = None
 
 
 @router.post("/login")
@@ -86,7 +87,7 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
     username = data.username.strip().lower()
     user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(data.password, user.password):
-        raise HTTPException(401, "Usuário ou senha incorretos")
+        raise HTTPException(401, "Usuario ou senha incorretos")
     if not user.is_active:
         raise HTTPException(403, "Conta suspensa. Contate seu professor.")
 
@@ -99,17 +100,28 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
 
 @router.post("/register")
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
+    from models import Academia
     username = data.username.strip().lower()
     if not username:
-        raise HTTPException(400, "Usuário é obrigatório")
+        raise HTTPException(400, "Usuario e obrigatorio")
     validate_password(data.password)
     if db.query(User).filter(User.username == username).first():
-        raise HTTPException(400, "Usuário já existe")
+        raise HTTPException(400, "Usuario ja existe")
 
-    user = User(username=username, password=hash_password(data.password))
+    academia_id = None
+    if data.academia_codigo:
+        codigo = data.academia_codigo.strip().upper()
+        academia = db.query(Academia).filter(
+            Academia.codigo == codigo, Academia.is_active == True
+        ).first()
+        if not academia:
+            raise HTTPException(400, "Codigo de academia invalido ou inativa")
+        academia_id = academia.id
+
+    user = User(username=username, password=hash_password(data.password), academia_id=academia_id)
     db.add(user)
     db.commit()
-    return {"message": "Usuário criado com sucesso!"}
+    return {"message": "Usuario criado com sucesso!"}
 
 
 @router.post("/logout")

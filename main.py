@@ -17,20 +17,22 @@ Base.metadata.create_all(bind=engine)
 with engine.connect() as _conn:
     from sqlalchemy import text as _text
     _pg = str(engine.url).startswith("postgresql")
-    for _stmt in [
-        "ALTER TABLE users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE"
-        if not _pg else
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE",
 
-        "ALTER TABLE users ADD COLUMN plan_expires_at TIMESTAMP"
-        if not _pg else
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMP",
-    ]:
+    def _add_col(table: str, col: str, typedef: str):
+        if _pg:
+            stmt = f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {typedef}"
+        else:
+            stmt = f"ALTER TABLE {table} ADD COLUMN {col} {typedef}"
         try:
-            _conn.execute(_text(_stmt))
+            _conn.execute(_text(stmt))
             _conn.commit()
         except Exception:
             _conn.rollback()
+
+    _add_col("users",  "is_active",       "BOOLEAN NOT NULL DEFAULT TRUE")
+    _add_col("users",  "plan_expires_at",  "TIMESTAMP")
+    _add_col("users",  "academia_id",      "INTEGER")
+    _add_col("admins", "academia_id",      "INTEGER")
 
 app = FastAPI(title="TreinoJa", docs_url=None, redoc_url=None)
 

@@ -1,17 +1,19 @@
 // ── State ────────────────────────────────────────────────────────────────────
 let currentAdmin = null;
 let currentTab = 'users';
+let academias = [];
 
 // Workout editor state
 let workoutUserId = null;
-let workoutUserObj = null;   // {id, username, plan_expires_at}
-let workoutData = {};        // full DATA object {A:{...}, B:{...}, ...}
+let workoutUserObj = null;
+let workoutData = {};
 let workoutLetter = 'A';
-let editingExIdx = -1;       // -1 = new
+let editingExIdx = -1;
 
 // Modal editing state
 let editingUserId = null;
 let editingTrainerId = null;
+let editingAcademiaId = null;
 
 // ── API ───────────────────────────────────────────────────────────────────────
 async function apiFetch(url, opts = {}) {
@@ -61,10 +63,18 @@ async function doLogin() {
     try {
         const res = await api.post('/api/admin/auth/login', { username, password });
         currentAdmin = res;
-        document.getElementById('sidebar-user').textContent = '👤 ' + res.username;
-        showApp();
-        showTab('users');
+        await afterLogin();
     } catch (e) { toast(e.message, 'err'); }
+}
+
+async function afterLogin() {
+    const label = currentAdmin.is_superadmin
+        ? `👤 ${currentAdmin.username} (super)`
+        : `👤 ${currentAdmin.username}${currentAdmin.academia_nome ? ' · ' + currentAdmin.academia_nome : ''}`;
+    document.getElementById('sidebar-user').textContent = label;
+    await setupSuperAdminUI();
+    showApp();
+    showTab('users');
 }
 
 async function doLogout() {
@@ -73,15 +83,50 @@ async function doLogout() {
     showLogin();
 }
 
+// ── Super-admin UI ────────────────────────────────────────────────────────────
+function isSuperAdmin() {
+    return !!(currentAdmin && currentAdmin.is_superadmin);
+}
+
+async function setupSuperAdminUI() {
+    document.querySelectorAll('.super-only').forEach(el => {
+        el.style.display = isSuperAdmin() ? '' : 'none';
+    });
+
+    if (isSuperAdmin()) {
+        try { academias = await api.get('/api/admin/academias'); } catch (_) { academias = []; }
+    } else {
+        academias = [];
+    }
+    populateAcademiaSelects();
+}
+
+function populateAcademiaSelects() {
+    ['u-academia', 't-academia'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '<option value="">— Nenhuma —</option>';
+        academias.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a.id;
+            opt.textContent = `${a.nome} (${a.codigo})`;
+            sel.appendChild(opt);
+        });
+    });
+}
+
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 function showTab(tab) {
     currentTab = tab;
-    ['users', 'trainers'].forEach(t => {
-        document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
-        document.getElementById('nav-' + t).classList.toggle('active', t === tab);
+    ['users', 'trainers', 'academias'].forEach(t => {
+        const tabEl = document.getElementById('tab-' + t);
+        const navEl = document.getElementById('nav-' + t);
+        if (tabEl) tabEl.style.display = t === tab ? 'block' : 'none';
+        if (navEl) navEl.classList.toggle('active', t === tab);
     });
     if (tab === 'users') loadUsers();
     if (tab === 'trainers') loadTrainers();
+    if (tab === 'academias') loadAcademias();
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -101,6 +146,10 @@ function statusBadge(u) {
     return '<span class="badge badge-ok">Ativo</span>';
 }
 
+function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 // ── Users ─────────────────────────────────────────────────────────────────────
 async function loadUsers() {
     let users;
@@ -109,6 +158,9 @@ async function loadUsers() {
     const tbody = document.getElementById('users-tbody');
     const empty = document.getElementById('users-empty');
     tbody.innerHTML = '';
+
+    const thAcademia = document.getElementById('th-academia-user');
+    if (thAcademia) thAcademia.style.display = isSuperAdmin() ? '' : 'none';
 
     if (!users.length) { empty.style.display = 'block'; return; }
     empty.style.display = 'none';
@@ -119,10 +171,15 @@ async function loadUsers() {
             ? `<span style="color:${u.plan_expired ? 'var(--danger)' : 'var(--text)'}">${fmtDate(u.plan_expires_at)}</span>`
             : '<span style="color:var(--muted)">Sem validade</span>';
 
+        const academiaCell = isSuperAdmin()
+            ? `<td>${esc(u.academia_nome || '—')}</td>`
+            : '';
+
         tr.innerHTML = `
             <td><strong>${esc(u.username)}</strong></td>
             <td>${statusBadge(u)}</td>
             <td>${expires}</td>
+            ${academiaCell}
             <td>${u.workouts_done}</td>
             <td>${fmtDate(u.last_workout)}</td>
             <td class="td-actions">
@@ -148,6 +205,9 @@ function openUserModal(userId = null) {
     document.getElementById('u-expires').value = '';
     document.getElementById('u-active').checked = true;
 
+    const acadField = document.getElementById('u-academia-field');
+    if (acadField) acadField.style.display = isSuperAdmin() ? '' : 'none';
+
     if (!isNew) {
         api.get('/api/admin/users').then(users => {
             const u = users.find(x => x.id === userId);
@@ -155,6 +215,10 @@ function openUserModal(userId = null) {
             document.getElementById('u-username').value = u.username;
             document.getElementById('u-expires').value = fmtDateInput(u.plan_expires_at);
             document.getElementById('u-active').checked = u.is_active;
+            if (isSuperAdmin()) {
+                const sel = document.getElementById('u-academia');
+                if (sel) sel.value = u.academia_id || '';
+            }
         });
     }
     document.getElementById('modal-user').classList.add('open');
@@ -175,11 +239,20 @@ async function saveUser() {
     try {
         if (editingUserId === null) {
             if (!password) { toast('Senha obrigatória', 'err'); return; }
-            await api.post('/api/admin/users', { username, password, plan_expires_at });
+            const body = { username, password, plan_expires_at };
+            if (isSuperAdmin()) {
+                const sel = document.getElementById('u-academia');
+                body.academia_id = sel && sel.value ? Number(sel.value) : null;
+            }
+            await api.post('/api/admin/users', body);
             toast('Usuário criado!');
         } else {
             const body = { username, is_active: isActive, plan_expires_at };
             if (password) body.password = password;
+            if (isSuperAdmin()) {
+                const sel = document.getElementById('u-academia');
+                body.academia_id = sel && sel.value ? Number(sel.value) : null;
+            }
             await api.put(`/api/admin/users/${editingUserId}`, body);
             toast('Usuário atualizado!');
         }
@@ -214,16 +287,23 @@ async function loadTrainers() {
     const empty = document.getElementById('trainers-empty');
     tbody.innerHTML = '';
 
+    const thAcademia = document.getElementById('th-academia-trainer');
+    if (thAcademia) thAcademia.style.display = isSuperAdmin() ? '' : 'none';
+
     if (!trainers.length) { empty.style.display = 'block'; return; }
     empty.style.display = 'none';
 
     trainers.forEach(t => {
         const isSelf = currentAdmin && t.id === currentAdmin.id;
+        const academiaCell = isSuperAdmin()
+            ? `<td>${esc(t.academia_nome || '—')}</td>`
+            : '';
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${esc(t.username)}</strong>${isSelf ? ' <span class="badge badge-muted">você</span>' : ''}</td>
             <td>${t.is_active ? '<span class="badge badge-ok">Ativo</span>' : '<span class="badge badge-danger">Inativo</span>'}</td>
             <td>${fmtDate(t.created_at)}</td>
+            ${academiaCell}
             <td class="td-actions">
                 <button class="btn btn-secondary btn-sm" onclick="openTrainerModal(${t.id})">✏️ Editar</button>
                 ${!isSelf ? `<button class="btn btn-danger btn-sm" onclick="deleteTrainer(${t.id},'${esc(t.username)}')">🗑</button>` : ''}
@@ -242,12 +322,19 @@ function openTrainerModal(trainerId = null) {
     document.getElementById('t-password').value = '';
     document.getElementById('t-active').checked = true;
 
+    const acadField = document.getElementById('t-academia-field');
+    if (acadField) acadField.style.display = isSuperAdmin() ? '' : 'none';
+
     if (!isNew) {
         api.get('/api/admin/trainers').then(trainers => {
             const t = trainers.find(x => x.id === trainerId);
             if (!t) return;
             document.getElementById('t-username').value = t.username;
             document.getElementById('t-active').checked = t.is_active;
+            if (isSuperAdmin()) {
+                const sel = document.getElementById('t-academia');
+                if (sel) sel.value = t.academia_id || '';
+            }
         });
     }
     document.getElementById('modal-trainer').classList.add('open');
@@ -266,11 +353,20 @@ async function saveTrainer() {
     try {
         if (editingTrainerId === null) {
             if (!password) { toast('Senha obrigatória', 'err'); return; }
-            await api.post('/api/admin/trainers', { username, password });
+            const body = { username, password };
+            if (isSuperAdmin()) {
+                const sel = document.getElementById('t-academia');
+                body.academia_id = sel && sel.value ? Number(sel.value) : null;
+            }
+            await api.post('/api/admin/trainers', body);
             toast('Professor criado!');
         } else {
             const body = { username, is_active: isActive };
             if (password) body.password = password;
+            if (isSuperAdmin()) {
+                const sel = document.getElementById('t-academia');
+                body.academia_id = sel && sel.value ? Number(sel.value) : null;
+            }
             await api.put(`/api/admin/trainers/${editingTrainerId}`, body);
             toast('Professor atualizado!');
         }
@@ -288,6 +384,101 @@ async function deleteTrainer(trainerId, username) {
     } catch (e) { toast(e.message, 'err'); }
 }
 
+// ── Academias (super-admin only) ──────────────────────────────────────────────
+async function loadAcademias() {
+    try { academias = await api.get('/api/admin/academias'); } catch (e) { toast(e.message, 'err'); return; }
+
+    const tbody = document.getElementById('academias-tbody');
+    const empty = document.getElementById('academias-empty');
+    tbody.innerHTML = '';
+
+    if (!academias.length) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    academias.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${esc(a.nome)}</strong></td>
+            <td><code style="background:var(--surface2);padding:2px 6px;border-radius:4px">${esc(a.codigo)}</code></td>
+            <td>${a.is_active ? '<span class="badge badge-ok">Ativa</span>' : '<span class="badge badge-danger">Inativa</span>'}</td>
+            <td>${a.users_count}</td>
+            <td>${a.trainers_count}</td>
+            <td class="td-actions">
+                <button class="btn btn-secondary btn-sm" onclick="openAcademiaModal(${a.id})">✏️ Editar</button>
+                ${a.is_active
+                    ? `<button class="btn btn-warning btn-sm" onclick="toggleAcademia(${a.id},false)">⏸ Desativar</button>`
+                    : `<button class="btn btn-ok btn-sm" onclick="toggleAcademia(${a.id},true)">▶ Ativar</button>`}
+                <button class="btn btn-danger btn-sm" onclick="deleteAcademia(${a.id},'${esc(a.nome)}')">🗑</button>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function openAcademiaModal(academiaId = null) {
+    editingAcademiaId = academiaId;
+    const isNew = academiaId === null;
+    document.getElementById('academia-modal-title').textContent = isNew ? 'Nova Academia' : 'Editar Academia';
+    document.getElementById('a-nome').value = '';
+    document.getElementById('a-codigo').value = '';
+    document.getElementById('a-active').checked = true;
+    document.getElementById('a-active-row').style.display = isNew ? 'none' : 'flex';
+
+    if (!isNew) {
+        const a = academias.find(x => x.id === academiaId);
+        if (a) {
+            document.getElementById('a-nome').value = a.nome;
+            document.getElementById('a-codigo').value = a.codigo;
+            document.getElementById('a-active').checked = a.is_active;
+        }
+    }
+    document.getElementById('modal-academia').classList.add('open');
+}
+
+function closeAcademiaModal() {
+    document.getElementById('modal-academia').classList.remove('open');
+    editingAcademiaId = null;
+}
+
+async function saveAcademia() {
+    const nome = document.getElementById('a-nome').value.trim();
+    const codigo = document.getElementById('a-codigo').value.trim().toUpperCase();
+    const is_active = document.getElementById('a-active').checked;
+
+    if (!nome || !codigo) { toast('Nome e código são obrigatórios', 'err'); return; }
+
+    try {
+        if (editingAcademiaId === null) {
+            await api.post('/api/admin/academias', { nome, codigo, is_active: true });
+            toast('Academia criada!');
+        } else {
+            await api.put(`/api/admin/academias/${editingAcademiaId}`, { nome, codigo, is_active });
+            toast('Academia atualizada!');
+        }
+        closeAcademiaModal();
+        await loadAcademias();
+        populateAcademiaSelects();
+    } catch (e) { toast(e.message, 'err'); }
+}
+
+async function toggleAcademia(academiaId, active) {
+    try {
+        await api.put(`/api/admin/academias/${academiaId}`, { is_active: active });
+        toast(active ? 'Academia ativada!' : 'Academia desativada!');
+        await loadAcademias();
+        populateAcademiaSelects();
+    } catch (e) { toast(e.message, 'err'); }
+}
+
+async function deleteAcademia(academiaId, nome) {
+    if (!confirm(`Excluir academia "${nome}"? Alunos e professores serão desvinculados.`)) return;
+    try {
+        await api.delete(`/api/admin/academias/${academiaId}`);
+        toast('Academia excluída!');
+        await loadAcademias();
+        populateAcademiaSelects();
+    } catch (e) { toast(e.message, 'err'); }
+}
+
 // ── Workout Modal ─────────────────────────────────────────────────────────────
 async function openWorkoutModal(userId, username) {
     workoutUserId = userId;
@@ -295,7 +486,6 @@ async function openWorkoutModal(userId, username) {
     document.getElementById('workout-modal-title').textContent = `Treinos de ${username}`;
 
     try {
-        // Load user data for expiry
         const users = await api.get('/api/admin/users');
         const u = users.find(x => x.id === userId);
         document.getElementById('w-expires').value = u ? fmtDateInput(u.plan_expires_at) : '';
@@ -303,6 +493,7 @@ async function openWorkoutModal(userId, username) {
         workoutData = await api.get(`/api/admin/users/${userId}/workouts`);
     } catch (e) { toast(e.message, 'err'); return; }
 
+    workoutLetter = Object.keys(workoutData).sort()[0] || 'A';
     buildWorkoutTabs();
     renderExercises();
     document.getElementById('modal-workout').classList.add('open');
@@ -441,7 +632,6 @@ function saveExercise() {
     if (editingExIdx === -1) {
         exs.push(ex);
     } else {
-        // Preserve done[] state if it existed
         ex.done = exs[editingExIdx].done || [];
         exs[editingExIdx] = ex;
     }
@@ -450,20 +640,13 @@ function saveExercise() {
     closeExerciseModal();
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function esc(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
     document.getElementById('l-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
     try {
         const me = await api.get('/api/admin/auth/me');
         currentAdmin = me;
-        document.getElementById('sidebar-user').textContent = '👤 ' + me.username;
-        showApp();
-        showTab('users');
+        await afterLogin();
     } catch (_) {
         showLogin();
     }

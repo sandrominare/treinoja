@@ -30,6 +30,7 @@
     <nav class="sidebar-nav">
       <button class="nav-btn active" id="nav-users" onclick="showTab('users')">👥 Usuários do App</button>
       <button class="nav-btn" id="nav-trainers" onclick="showTab('trainers')">🏋️ Professores</button>
+      <button class="nav-btn super-only" id="nav-academias" onclick="showTab('academias')" style="display:none">🏢 Academias</button>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user" id="sidebar-user"></div>
@@ -52,6 +53,7 @@
               <th>Usuário</th>
               <th>Status</th>
               <th>Validade do Plano</th>
+              <th id="th-academia-user" style="display:none">Academia</th>
               <th>Treinos</th>
               <th>Último Treino</th>
               <th>Ações</th>
@@ -76,12 +78,37 @@
               <th>Usuário</th>
               <th>Status</th>
               <th>Cadastrado em</th>
+              <th id="th-academia-trainer" style="display:none">Academia</th>
               <th>Ações</th>
             </tr>
           </thead>
           <tbody id="trainers-tbody"></tbody>
         </table>
         <div id="trainers-empty" class="empty-state" style="display:none">Nenhum professor cadastrado.</div>
+      </div>
+    </div>
+
+    <!-- Academias tab (super-admin only) -->
+    <div id="tab-academias" style="display:none">
+      <div class="page-header">
+        <h1>Academias</h1>
+        <button class="btn btn-primary" onclick="openAcademiaModal()">+ Nova Academia</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Código</th>
+              <th>Status</th>
+              <th>Alunos</th>
+              <th>Professores</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="academias-tbody"></tbody>
+        </table>
+        <div id="academias-empty" class="empty-state" style="display:none">Nenhuma academia cadastrada.</div>
       </div>
     </div>
 
@@ -104,6 +131,10 @@
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('u-expires').value=''">Sem validade</button>
       </div>
     </div>
+    <div class="field" id="u-academia-field" style="display:none">
+      <label>Academia</label>
+      <select id="u-academia" style="width:100%"></select>
+    </div>
     <div class="field checkbox-row" id="u-active-row">
       <input type="checkbox" id="u-active" checked>
       <label for="u-active">Conta ativa</label>
@@ -124,6 +155,10 @@
     </div>
     <div class="field"><label>Usuário</label><input id="t-username" type="text" autocapitalize="none"></div>
     <div class="field"><label>Senha<span id="t-pass-hint" style="color:var(--muted)"> — deixe em branco para não alterar</span></label><input id="t-password" type="password"></div>
+    <div class="field" id="t-academia-field" style="display:none">
+      <label>Academia</label>
+      <select id="t-academia" style="width:100%"></select>
+    </div>
     <div class="field checkbox-row" id="t-active-row">
       <input type="checkbox" id="t-active" checked>
       <label for="t-active">Conta ativa</label>
@@ -131,6 +166,26 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeTrainerModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="saveTrainer()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Academia ────────────────────────────────────────────────────── -->
+<div id="modal-academia" class="modal-backdrop" onclick="if(event.target===this)closeAcademiaModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="academia-modal-title">Nova Academia</h2>
+      <button class="modal-close" onclick="closeAcademiaModal()">×</button>
+    </div>
+    <div class="field"><label>Nome</label><input id="a-nome" type="text"></div>
+    <div class="field"><label>Código (identificador único)</label><input id="a-codigo" type="text" autocapitalize="characters" style="text-transform:uppercase" placeholder="Ex: ACADEMIA01"></div>
+    <div class="field checkbox-row" id="a-active-row" style="display:none">
+      <input type="checkbox" id="a-active" checked>
+      <label for="a-active">Ativa</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeAcademiaModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveAcademia()">Salvar</button>
     </div>
   </div>
 </div>

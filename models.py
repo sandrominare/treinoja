@@ -4,6 +4,15 @@ from sqlalchemy.sql import func
 from database import Base
 
 
+class Academia(Base):
+    __tablename__ = "academias"
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, nullable=False)
+    codigo = Column(String, unique=True, index=True, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -11,6 +20,7 @@ class User(Base):
     password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     plan_expires_at = Column(DateTime, nullable=True)
+    academia_id = Column(Integer, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
 
@@ -20,6 +30,7 @@ class Admin(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    academia_id = Column(Integer, nullable=True)   # NULL = super-admin
     created_at = Column(DateTime, server_default=func.now())
 
 
