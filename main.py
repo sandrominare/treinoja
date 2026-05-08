@@ -13,6 +13,25 @@ from routers.auth import hash_password
 
 Base.metadata.create_all(bind=engine)
 
+# Migrations: add columns introduced after initial deploy
+with engine.connect() as _conn:
+    from sqlalchemy import text as _text
+    _pg = str(engine.url).startswith("postgresql")
+    for _stmt in [
+        "ALTER TABLE users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE"
+        if not _pg else
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE",
+
+        "ALTER TABLE users ADD COLUMN plan_expires_at TIMESTAMP"
+        if not _pg else
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMP",
+    ]:
+        try:
+            _conn.execute(_text(_stmt))
+            _conn.commit()
+        except Exception:
+            _conn.rollback()
+
 app = FastAPI(title="TreinoJa", docs_url=None, redoc_url=None)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
