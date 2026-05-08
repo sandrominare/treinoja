@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TreinoJá Admin</title>
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+
+<!-- ── Login ─────────────────────────────────────────────────────────────── -->
+<div id="view-login" class="login-wrap">
+  <div class="login-card">
+    <h1>TreinoJá</h1>
+    <p>Painel do Professor</p>
+    <div class="field"><label>Usuário</label><input id="l-user" type="text" autocapitalize="none"></div>
+    <div class="field"><label>Senha</label><input id="l-pass" type="password"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">ENTRAR</button>
+  </div>
+</div>
+
+<!-- ── App ───────────────────────────────────────────────────────────────── -->
+<div id="view-app" class="app-layout" style="display:none">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>TreinoJá Admin</h2>
+      <span>Painel do Professor</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" id="nav-users" onclick="showTab('users')">👥 Usuários do App</button>
+      <button class="nav-btn" id="nav-trainers" onclick="showTab('trainers')">🏋️ Professores</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user"></div>
+      <button class="btn btn-secondary" style="width:100%" onclick="doLogout()">Sair</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- Users tab -->
+    <div id="tab-users">
+      <div class="page-header">
+        <h1>Usuários do App</h1>
+        <button class="btn btn-primary" onclick="openUserModal()">+ Novo Usuário</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuário</th>
+              <th>Status</th>
+              <th>Validade do Plano</th>
+              <th>Treinos</th>
+              <th>Último Treino</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+        <div id="users-empty" class="empty-state" style="display:none">Nenhum usuário cadastrado.</div>
+      </div>
+    </div>
+
+    <!-- Trainers tab -->
+    <div id="tab-trainers" style="display:none">
+      <div class="page-header">
+        <h1>Professores</h1>
+        <button class="btn btn-primary" onclick="openTrainerModal()">+ Novo Professor</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuário</th>
+              <th>Status</th>
+              <th>Cadastrado em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="trainers-tbody"></tbody>
+        </table>
+        <div id="trainers-empty" class="empty-state" style="display:none">Nenhum professor cadastrado.</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── Modal: User ────────────────────────────────────────────────────────── -->
+<div id="modal-user" class="modal-backdrop" onclick="if(event.target===this)closeUserModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="user-modal-title">Novo Usuário</h2>
+      <button class="modal-close" onclick="closeUserModal()">×</button>
+    </div>
+    <div class="field"><label>Usuário</label><input id="u-username" type="text" autocapitalize="none"></div>
+    <div class="field"><label>Senha numérica (min 4 dígitos únicos)<span id="u-pass-hint" style="color:var(--muted)"> — deixe em branco para não alterar</span></label><input id="u-password" type="password" inputmode="numeric"></div>
+    <div class="field">
+      <label>Validade do Plano</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="u-expires" type="date" style="max-width:200px">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('u-expires').value=''">Sem validade</button>
+      </div>
+    </div>
+    <div class="field checkbox-row" id="u-active-row">
+      <input type="checkbox" id="u-active" checked>
+      <label for="u-active">Conta ativa</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeUserModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUser()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Trainer ─────────────────────────────────────────────────────── -->
+<div id="modal-trainer" class="modal-backdrop" onclick="if(event.target===this)closeTrainerModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="trainer-modal-title">Novo Professor</h2>
+      <button class="modal-close" onclick="closeTrainerModal()">×</button>
+    </div>
+    <div class="field"><label>Usuário</label><input id="t-username" type="text" autocapitalize="none"></div>
+    <div class="field"><label>Senha<span id="t-pass-hint" style="color:var(--muted)"> — deixe em branco para não alterar</span></label><input id="t-password" type="password"></div>
+    <div class="field checkbox-row" id="t-active-row">
+      <input type="checkbox" id="t-active" checked>
+      <label for="t-active">Conta ativa</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeTrainerModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveTrainer()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Workouts ────────────────────────────────────────────────────── -->
+<div id="modal-workout" class="modal-backdrop" onclick="if(event.target===this)closeWorkoutModal()">
+  <div class="modal-box wide">
+    <div class="modal-header">
+      <h2 id="workout-modal-title">Treinos</h2>
+      <button class="modal-close" onclick="closeWorkoutModal()">×</button>
+    </div>
+
+    <div class="expiry-row">
+      <label>Validade do Plano:</label>
+      <input id="w-expires" type="date" style="max-width:180px">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('w-expires').value=''">Sem validade</button>
+      <button class="btn btn-warning btn-sm" onclick="saveExpiry()">Salvar Validade</button>
+    </div>
+
+    <div class="workout-tabs" id="workout-tabs"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span id="workout-tab-name" style="color:var(--muted);font-size:13px"></span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary btn-sm" onclick="resetWorkouts()" title="Restaurar treinos padrão">↺ Padrão</button>
+        <button class="btn btn-primary btn-sm" onclick="openExerciseModal(-1)">+ Exercício</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Nome</th><th>Tipo</th><th>Séries</th><th>Reps</th><th>Carga</th><th>Desc.</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="exercises-tbody"></tbody>
+      </table>
+      <div id="exercises-empty" class="empty-state" style="display:none">Nenhum exercício neste treino.</div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeWorkoutModal()">Fechar</button>
+      <button class="btn btn-primary" onclick="saveWorkouts()">💾 Salvar Treinos</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Exercise ────────────────────────────────────────────────────── -->
+<div id="modal-exercise" class="modal-backdrop" onclick="if(event.target===this)closeExerciseModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="ex-modal-title">Exercício</h2>
+      <button class="modal-close" onclick="closeExerciseModal()">×</button>
+    </div>
+    <div class="field"><label>Nome</label><input id="ex-nome" type="text"></div>
+    <div class="field"><label>Tipo (grupo muscular)</label><input id="ex-tipo" type="text"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Séries</label><input id="ex-series" type="number" min="1"></div>
+      <div class="field"><label>Reps (ex: 8-12)</label><input id="ex-reps" type="text"></div>
+      <div class="field"><label>Carga (kg)</label><input id="ex-carga" type="number" min="0"></div>
+      <div class="field"><label>Descanso (s)</label><input id="ex-descanso" type="number" min="0"></div>
+    </div>
+    <div class="field"><label>Mensagem / Instrução</label><input id="ex-msg" type="text"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeExerciseModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveExercise()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ──────────────────────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<script src="/static/js/admin.js"></script>
+</body>
+</html>

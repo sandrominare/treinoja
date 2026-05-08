@@ -87,6 +87,8 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
     user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(data.password, user.password):
         raise HTTPException(401, "Usuário ou senha incorretos")
+    if not user.is_active:
+        raise HTTPException(403, "Conta suspensa. Contate seu professor.")
 
     token = create_token(user.id)
     response.set_cookie(
@@ -118,4 +120,11 @@ def logout(response: Response):
 
 @router.get("/me")
 def me(user: User = Depends(get_current_user)):
-    return {"username": user.username}
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    plan_expired = user.plan_expires_at is not None and user.plan_expires_at < now
+    return {
+        "username": user.username,
+        "is_active": user.is_active,
+        "plan_expires_at": user.plan_expires_at.isoformat() if user.plan_expires_at else None,
+        "plan_expired": plan_expired,
+    }

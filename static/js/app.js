@@ -9,6 +9,7 @@ let HISTORY = [];
 let workoutTimerInterval = null;
 let workoutSeconds = 0;
 let currentUser = null;
+let currentUserStatus = null;
 let saveTimer = null;
 
 // ── API helpers ──────────────────────────────────────────────────────────────
@@ -445,9 +446,49 @@ function getNextWorkout() {
 
 function renderHome() {
     const nextKey = getNextWorkout();
+    const letter = document.getElementById('home-next-letter');
+    const name = document.getElementById('home-next-name');
+    const btn = document.querySelector('#view-home .accent.big-btn');
+    const warning = document.getElementById('home-warning');
+
+    // Account or plan status
+    if (currentUserStatus && !currentUserStatus.is_active) {
+        letter.textContent = '⚠';
+        name.textContent = 'Conta suspensa. Contate seu professor.';
+        name.style.color = '#ef4444';
+        if (btn) btn.disabled = true;
+        if (warning) warning.style.display = 'none';
+        return;
+    }
+    if (currentUserStatus?.plan_expired) {
+        const expDate = currentUserStatus.plan_expires_at
+            ? new Date(currentUserStatus.plan_expires_at).toLocaleDateString('pt-BR')
+            : '';
+        letter.textContent = '⏰';
+        name.textContent = `Plano vencido${expDate ? ' em ' + expDate : ''}. Contate seu professor.`;
+        name.style.color = '#f59e0b';
+        if (btn) btn.disabled = true;
+        if (warning) warning.style.display = 'none';
+        return;
+    }
+
+    if (btn) btn.disabled = false;
+    name.style.color = '';
+
     if (!nextKey) return;
-    document.getElementById('home-next-letter').textContent = nextKey;
-    document.getElementById('home-next-name').textContent = DATA[nextKey]?.nome || '';
+    letter.textContent = nextKey;
+    name.textContent = DATA[nextKey]?.nome || '';
+
+    // Expiry warning (7 days)
+    if (currentUserStatus?.plan_expires_at && warning) {
+        const daysLeft = Math.ceil((new Date(currentUserStatus.plan_expires_at) - new Date()) / 86400000);
+        if (daysLeft <= 7 && daysLeft > 0) {
+            warning.textContent = `⚠ Plano vence em ${daysLeft} dia(s).`;
+            warning.style.display = 'block';
+        } else {
+            warning.style.display = 'none';
+        }
+    }
 
     const count = HISTORY.length;
     document.getElementById('home-stats-count').textContent = count;
@@ -737,6 +778,7 @@ window.addEventListener('load', async () => {
     try {
         const me = await api.get('/api/auth/me');
         currentUser = me.username;
+        currentUserStatus = me;
         await initUserData();
     } catch (_) {
         showView('view-login');

@@ -9,7 +9,8 @@
       "Bash(Sort-Object FullName)",
       "Bash(Format-Table -AutoSize)",
       "PowerShell(railway *)",
-      "PowerShell(gh auth *)"
+      "PowerShell(gh auth *)",
+      "PowerShell(npm *)"
     ]
   }
 }
