@@ -50,9 +50,19 @@ app.include_router(admin_router.router, prefix="/api/admin", tags=["admin"])
 def create_initial_admin():
     db: Session = SessionLocal()
     try:
+        # conta sandro legada (mantida para compatibilidade)
         if not db.query(models.Admin).filter(models.Admin.username == "sandro").first():
             db.add(models.Admin(username="sandro", password=hash_password("adm89"), is_active=True))
-            db.commit()
+
+        # super-admin dedicado — nunca vinculado a academia
+        sa_user = os.getenv("SUPERADMIN_USER", "superadmin")
+        sa_pass = os.getenv("SUPERADMIN_PASS", "super@TreinoJa1")
+        existing = db.query(models.Admin).filter(models.Admin.username == sa_user).first()
+        if not existing:
+            db.add(models.Admin(username=sa_user, password=hash_password(sa_pass), is_active=True, academia_id=None))
+        else:
+            existing.academia_id = None  # garante que nunca perde super-admin
+        db.commit()
     finally:
         db.close()
 
