@@ -343,3 +343,22 @@ input[type=password] {
     font-size: 20px;
     color: var(--accent)
 }
+
+.obs-field {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #2e2e2e;
+    border-radius: 8px;
+    color: #ccc;
+    padding: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+    min-height: 48px
+}
+
+.obs-field:focus {
+    outline: none;
+    border-color: var(--accent)
+}

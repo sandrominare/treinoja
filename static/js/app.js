@@ -129,10 +129,12 @@ async function initUserData() {
         sel.appendChild(opt);
     });
 
+    let inProgress = false;
     try {
         const prog = await api.get('/api/progress');
         if (prog && DATA[prog.treino]) {
             currentTreino = prog.treino;
+            inProgress = true;
         } else {
             currentTreino = getNextWorkout() || Object.keys(DATA)[0] || 'A';
         }
@@ -143,7 +145,13 @@ async function initUserData() {
     sel.value = currentTreino;
     render();
     updateRest();
-    showHome();
+
+    if (inProgress) {
+        startWorkoutTimer();
+        showView('view-workout');
+    } else {
+        showHome();
+    }
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -264,11 +272,7 @@ function render() {
                 }
             };
 
-            const btnStart = document.createElement('button');
-            btnStart.textContent = 'Timer';
-            btnStart.onclick = () => startRest(valDesc || 60, idx, i === totalSeries);
-
-            actions.append(btnEdit, btnStart, chk);
+            actions.append(btnEdit, chk);
             sets.append(left, reps, carga, descanso, actions);
         }
 
@@ -280,6 +284,24 @@ function render() {
             msg.textContent = ex.mensagem;
             body.appendChild(msg);
         }
+
+        const obsWrap = document.createElement('div');
+        obsWrap.style.marginTop = '10px';
+        const obsLabel = document.createElement('div');
+        obsLabel.className = 'small';
+        obsLabel.style.marginBottom = '4px';
+        obsLabel.textContent = 'Observação';
+        const obsInput = document.createElement('textarea');
+        obsInput.className = 'obs-field';
+        obsInput.placeholder = 'Anotações do treino...';
+        obsInput.value = ex.observacao || '';
+        obsInput.rows = 2;
+        obsInput.addEventListener('input', () => {
+            ex.observacao = obsInput.value;
+            saveData();
+        });
+        obsWrap.append(obsLabel, obsInput);
+        body.appendChild(obsWrap);
 
         card.appendChild(body);
         container.appendChild(card);
@@ -702,6 +724,9 @@ function openExerciseModal(idx) {
             if (!DATA[currentTreino].exercicios) DATA[currentTreino].exercicios = [];
             DATA[currentTreino].exercicios.push(newEx);
         } else {
+            const old = DATA[currentTreino].exercicios[idx];
+            newEx.done = old.done || [];
+            newEx.observacao = old.observacao || '';
             DATA[currentTreino].exercicios[idx] = newEx;
         }
         saveData();
