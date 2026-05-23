@@ -87,7 +87,7 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
     username = data.username.strip().lower()
     user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(data.password, user.password):
-        raise HTTPException(401, "Usuario ou senha incorretos")
+        raise HTTPException(400, "Usuario ou senha incorretos")
     if not user.is_active:
         raise HTTPException(403, "Conta suspensa. Contate seu professor.")
 
