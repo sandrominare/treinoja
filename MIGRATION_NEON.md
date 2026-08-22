@@ -35,6 +35,15 @@ python scripts/migrate_db.py
 O script cria as tabelas, copia todas as linhas mantendo os IDs, realinha as sequences e
 imprime uma comparação de contagens. Rode `python scripts/migrate_db.py --verify` para conferir de novo.
 
+**Rede corporativa bloqueando a porta 5432?** (erro `Connection timed out`) Adicione `--http`:
+o destino passa a ser gravado pelo endpoint SQL-over-HTTPS do Neon (porta 443). A origem
+(Railway) ainda precisa ser alcançável — a porta pública do Railway é aleatória (ex.: 12345),
+teste com `Test-NetConnection HOST -Port PORTA`. Se também estiver bloqueada, rode de outra rede
+(celular/casa) ou exporte do Railway via `railway connect` de lá.
+
+Status em 22/08/2026: projeto Neon criado (`ep-wispy-darkness-ac5dmxlu`, sa-east-1), schema já
+criado e vazio. Falta apenas copiar os dados do Railway.
+
 Se o Railway já não estiver acessível, a origem pode ser o SQLite local: `sqlite:///./treinoja.db`.
 
 ## 4. Apontar a aplicação para o Neon
