@@ -26,7 +26,7 @@ const TIPO_ICONS = { 'Costas': '🏋️', 'Peito': '💪', 'Pernas': '🦵', 'Om
 // ── API ──────────────────────────────────────────────────────────────────────
 async function apiFetch(url, opts = {}) {
     const r = await fetch(url, opts);
-    if (r.status === 401) { showLogin(); throw new Error('Sessão expirada'); }
+    if (r.status === 401 && !url.includes('/auth/login')) { showLogin(); throw new Error('Sessão expirada'); }
     if (!r.ok) {
         let msg = 'Erro';
         try { msg = (await r.json()).detail || msg; } catch (_) {}

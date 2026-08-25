@@ -87,7 +87,7 @@ def login(data: LoginRequest, response: Response, db: Session = Depends(get_db))
     username = data.username.strip().lower()
     admin = db.query(Admin).filter(Admin.username == username).first()
     if not admin or not verify_password(data.password, admin.password):
-        raise HTTPException(401, "Usuário ou senha incorretos")
+        raise HTTPException(400, "Usuário ou senha incorretos")
     if not admin.is_active:
         raise HTTPException(403, "Conta desativada")
     token = _create_token(admin.id)
