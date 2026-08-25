@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TreinoJá Admin</title>
+  <title>TreinoJá — Painel do Professor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/admin.css">
 </head>
 <body>
@@ -11,11 +14,12 @@
 <!-- ── Login ─────────────────────────────────────────────────────────────── -->
 <div id="view-login" class="login-wrap">
   <div class="login-card">
+    <div class="login-logo">T</div>
     <h1>TreinoJá</h1>
     <p>Painel do Professor</p>
     <div class="field"><label>Usuário</label><input id="l-user" type="text" autocapitalize="none"></div>
     <div class="field"><label>Senha</label><input id="l-pass" type="password"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="doLogin()">ENTRAR</button>
+    <button class="btn btn-primary btn-block" onclick="doLogin()">Entrar</button>
   </div>
 </div>
 
@@ -23,241 +27,231 @@
 <div id="view-app" class="app-layout" style="display:none">
 
   <aside class="sidebar">
-    <div class="sidebar-logo">
-      <h2>TreinoJá Admin</h2>
-      <span>Painel do Professor</span>
+    <div class="side-brand">
+      <div class="side-logo" id="side-logo">T</div>
+      <div>
+        <div class="side-name" id="side-academia">TREINOJÁ</div>
+        <div class="side-sub">painel do professor</div>
+      </div>
     </div>
-    <nav class="sidebar-nav">
-      <button class="nav-btn active" id="nav-users" onclick="showTab('users')">👥 Usuários do App</button>
-      <button class="nav-btn" id="nav-trainers" onclick="showTab('trainers')">🏋️ Professores</button>
-      <button class="nav-btn super-only" id="nav-academias" onclick="showTab('academias')" style="display:none">🏢 Academias</button>
-    </nav>
-    <div class="sidebar-footer">
-      <div class="sidebar-user" id="sidebar-user"></div>
-      <button class="btn btn-secondary" style="width:100%" onclick="doLogout()">Sair</button>
+
+    <div class="side-section">Principal</div>
+    <button class="nav-item active" data-view="dashboard" onclick="showView('dashboard')"><span class="nav-ico">📊</span> Dashboard</button>
+    <button class="nav-item" data-view="alunos" onclick="showView('alunos')"><span class="nav-ico">👥</span> Alunos</button>
+    <button class="nav-item" data-view="frequencia" onclick="showView('frequencia')"><span class="nav-ico">✅</span> Frequência</button>
+
+    <div class="side-section">Treinos</div>
+    <button class="nav-item" data-view="montador" onclick="showView('montador')"><span class="nav-ico">🏋️</span> Montador de treino</button>
+
+    <div class="side-section">Gestão</div>
+    <button class="nav-item" data-view="gestao" onclick="showView('gestao')"><span class="nav-ico">⚙️</span> Administração <span class="nav-badge" id="admin-badge" style="display:none">ADMIN</span></button>
+
+    <div class="side-foot">
+      <div class="side-user" id="side-user"></div>
+      <button class="btn btn-ghost btn-sm btn-block" onclick="doLogout()">Sair</button>
     </div>
   </aside>
 
-  <main class="main-content">
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1 id="page-title">Dashboard</h1>
+        <p id="page-sub">Visão geral da academia</p>
+      </div>
+      <div class="searchbox"><span>🔍</span><input id="search" type="text" placeholder="Buscar aluno..." oninput="onSearch(this.value)"></div>
+      <button class="btn btn-primary" onclick="openUserModal()">+ Novo aluno</button>
+    </header>
 
-    <!-- Users tab -->
-    <div id="tab-users">
-      <div class="page-header">
-        <h1>Usuários do App</h1>
-        <button class="btn btn-primary" onclick="openUserModal()">+ Novo Usuário</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Usuário</th>
-              <th>Status</th>
-              <th>Validade do Plano</th>
-              <th id="th-academia-user" style="display:none">Academia</th>
-              <th>Treinos</th>
-              <th>Último Treino</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="users-tbody"></tbody>
-        </table>
-        <div id="users-empty" class="empty-state" style="display:none">Nenhum usuário cadastrado.</div>
-      </div>
+    <div class="content">
+
+      <!-- Dashboard -->
+      <section id="v-dashboard">
+        <div class="kpi-grid" id="dash-kpis"></div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head">
+              <div><h3>Check-ins</h3><p class="card-sub">Frequência diária dos alunos</p></div>
+              <div class="seg" id="chart-seg">
+                <button class="seg-btn active" onclick="setChartRange('week', this)">Semana</button>
+                <button class="seg-btn" onclick="setChartRange('month', this)">Mês</button>
+              </div>
+            </div>
+            <div class="bars" id="dash-chart"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Check-ins de hoje</h3><p class="card-sub" id="dash-today-sub"></p></div></div>
+            <div class="rowlist" id="dash-today"></div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head"><div><h3>Precisam de atenção</h3><p class="card-sub">Sem treinar há mais de 7 dias</p></div></div>
+            <div class="rowlist" id="dash-attention"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Atividade recente</h3><p class="card-sub">Últimos treinos concluídos</p></div></div>
+            <div class="rowlist" id="dash-recent"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Alunos -->
+      <section id="v-alunos" style="display:none">
+        <div class="chips" id="alunos-chips"></div>
+        <div class="card table-card">
+          <table class="tbl">
+            <thead><tr><th>Aluno</th><th>Plano</th><th>Status</th><th>Adesão</th><th style="text-align:right">Últ. visita</th><th></th></tr></thead>
+            <tbody id="alunos-tbody"></tbody>
+          </table>
+          <div id="alunos-empty" class="empty" style="display:none">Nenhum aluno encontrado.</div>
+        </div>
+      </section>
+
+      <!-- Ficha do aluno -->
+      <section id="v-aluno" style="display:none">
+        <a class="backlink" onclick="showView('alunos')">← Voltar para alunos</a>
+        <div class="ficha-grid">
+          <div>
+            <div class="card profile-card">
+              <div class="avatar avatar-xl" id="f-avatar"></div>
+              <h2 id="f-nome"></h2>
+              <p class="card-sub" id="f-plano"></p>
+              <div class="profile-actions">
+                <button class="btn btn-primary" id="f-editar" onclick="montadorFor(fichaUserId)">✎ Editar treino</button>
+                <button class="btn btn-ghost" onclick="openUserModalEdit(fichaUserId)">Dados</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3>Treino atual</h3><p class="card-sub" id="f-treino-sub"></p></div></div>
+              <div class="rowlist" id="f-treinos"></div>
+            </div>
+          </div>
+          <div>
+            <div class="kpi-grid kpi-3" id="f-kpis"></div>
+            <div class="card">
+              <div class="card-head"><div><h3>Frequência — 12 semanas</h3><p class="card-sub">Treinos por semana</p></div></div>
+              <div class="heatmap" id="f-heatmap"></div>
+              <div class="heatmap-legend"><span>menos</span><i class="hm hm0"></i><i class="hm hm1"></i><i class="hm hm2"></i><i class="hm hm3"></i><span>mais</span></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3>Últimos treinos</h3></div></div>
+              <div class="rowlist" id="f-hist"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Frequência -->
+      <section id="v-frequencia" style="display:none">
+        <div class="kpi-grid" id="freq-kpis"></div>
+        <div class="card">
+          <div class="card-head"><div><h3>Check-ins de hoje</h3><p class="card-sub" id="freq-sub"></p></div></div>
+          <div class="rowlist" id="freq-list"></div>
+        </div>
+      </section>
+
+      <!-- Montador -->
+      <section id="v-montador" style="display:none">
+        <div class="montador-grid">
+          <div class="card">
+            <div class="card-head montador-head">
+              <div>
+                <h3>Montando: <span class="accent" id="m-aluno-nome">—</span></h3>
+                <select id="m-aluno" class="input" onchange="montadorFor(parseInt(this.value)||null)"><option value="">Selecionar aluno…</option></select>
+              </div>
+              <button class="btn btn-dark" onclick="montadorSave()">💾 Salvar &amp; enviar</button>
+            </div>
+            <div class="chips" id="m-tabs"></div>
+            <div class="field" style="margin:4px 0 10px"><input id="m-treino-nome" class="input" type="text" placeholder="Nome do treino (ex: Peito & Tríceps)" oninput="montadorRename(this.value)"></div>
+            <div id="m-exercicios"></div>
+            <div class="montador-foot">
+              <button class="btn btn-ghost btn-sm" onclick="montadorAddCustom()">+ Exercício em branco</button>
+              <button class="btn btn-ghost btn-sm" onclick="montadorReset()">↺ Restaurar padrão</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Biblioteca</h3><p class="card-sub">Toque para adicionar ao treino</p></div></div>
+            <div class="chips chips-sm" id="lib-filtros"></div>
+            <div class="rowlist lib-list" id="lib-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Administração -->
+      <section id="v-gestao" style="display:none">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-head">
+              <div><h3>Professores</h3><p class="card-sub">Contas com acesso ao painel</p></div>
+              <button class="btn btn-primary btn-sm" onclick="openTrainerModal()">+ Professor</button>
+            </div>
+            <div class="rowlist" id="g-trainers"></div>
+          </div>
+          <div class="card super-only" style="display:none">
+            <div class="card-head">
+              <div><h3>Academias</h3><p class="card-sub">Somente super-admin</p></div>
+              <button class="btn btn-primary btn-sm" onclick="openAcademiaModal()">+ Academia</button>
+            </div>
+            <div class="rowlist" id="g-academias"></div>
+          </div>
+        </div>
+      </section>
+
     </div>
-
-    <!-- Trainers tab -->
-    <div id="tab-trainers" style="display:none">
-      <div class="page-header">
-        <h1>Professores</h1>
-        <button class="btn btn-primary" onclick="openTrainerModal()">+ Novo Professor</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Usuário</th>
-              <th>Status</th>
-              <th>Cadastrado em</th>
-              <th id="th-academia-trainer" style="display:none">Academia</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="trainers-tbody"></tbody>
-        </table>
-        <div id="trainers-empty" class="empty-state" style="display:none">Nenhum professor cadastrado.</div>
-      </div>
-    </div>
-
-    <!-- Academias tab (super-admin only) -->
-    <div id="tab-academias" style="display:none">
-      <div class="page-header">
-        <h1>Academias</h1>
-        <button class="btn btn-primary" onclick="openAcademiaModal()">+ Nova Academia</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Código</th>
-              <th>Status</th>
-              <th>Alunos</th>
-              <th>Professores</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="academias-tbody"></tbody>
-        </table>
-        <div id="academias-empty" class="empty-state" style="display:none">Nenhuma academia cadastrada.</div>
-      </div>
-    </div>
-
   </main>
 </div>
 
-<!-- ── Modal: User ────────────────────────────────────────────────────────── -->
-<div id="modal-user" class="modal-backdrop" onclick="if(event.target===this)closeUserModal()">
+<!-- ── Modal: Aluno ───────────────────────────────────────────────────────── -->
+<div id="modal-user" class="modal-backdrop" onclick="if(event.target===this)closeModal('modal-user')">
   <div class="modal-box">
-    <div class="modal-header">
-      <h2 id="user-modal-title">Novo Usuário</h2>
-      <button class="modal-close" onclick="closeUserModal()">×</button>
-    </div>
+    <div class="modal-header"><h2 id="user-modal-title">Novo aluno</h2><button class="modal-close" onclick="closeModal('modal-user')">×</button></div>
     <div class="field"><label>Usuário</label><input id="u-username" type="text" autocapitalize="none"></div>
-    <div class="field"><label>Senha numérica (min 4 dígitos únicos)<span id="u-pass-hint" style="color:var(--muted)"> — deixe em branco para não alterar</span></label><input id="u-password" type="password" inputmode="numeric"></div>
-    <div class="field">
-      <label>Validade do Plano</label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input id="u-expires" type="date" style="max-width:200px">
-        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('u-expires').value=''">Sem validade</button>
-      </div>
+    <div class="field"><label>Senha numérica (mín. 4 dígitos únicos)<span id="u-pass-hint" class="hint"> — em branco para não alterar</span></label><input id="u-password" type="password" inputmode="numeric"></div>
+    <div class="field"><label>Validade do plano</label>
+      <div class="inline"><input id="u-expires" type="date"><button class="btn btn-ghost btn-sm" onclick="document.getElementById('u-expires').value=''">Sem validade</button></div>
     </div>
-    <div class="field" id="u-academia-field" style="display:none">
-      <label>Academia</label>
-      <select id="u-academia" style="width:100%"></select>
-    </div>
-    <div class="field checkbox-row" id="u-active-row">
-      <input type="checkbox" id="u-active" checked>
-      <label for="u-active">Conta ativa</label>
-    </div>
+    <div class="field super-only" id="u-academia-field" style="display:none"><label>Academia</label><select id="u-academia"></select></div>
+    <div class="field checkbox-row" id="u-active-row"><input type="checkbox" id="u-active" checked><label for="u-active">Conta ativa</label></div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeUserModal()">Cancelar</button>
+      <button class="btn btn-danger btn-sm" id="u-delete" style="display:none;margin-right:auto" onclick="deleteUser()">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-user')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveUser()">Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- ── Modal: Trainer ─────────────────────────────────────────────────────── -->
-<div id="modal-trainer" class="modal-backdrop" onclick="if(event.target===this)closeTrainerModal()">
+<!-- ── Modal: Professor ───────────────────────────────────────────────────── -->
+<div id="modal-trainer" class="modal-backdrop" onclick="if(event.target===this)closeModal('modal-trainer')">
   <div class="modal-box">
-    <div class="modal-header">
-      <h2 id="trainer-modal-title">Novo Professor</h2>
-      <button class="modal-close" onclick="closeTrainerModal()">×</button>
-    </div>
+    <div class="modal-header"><h2 id="trainer-modal-title">Novo professor</h2><button class="modal-close" onclick="closeModal('modal-trainer')">×</button></div>
     <div class="field"><label>Usuário</label><input id="t-username" type="text" autocapitalize="none"></div>
-    <div class="field"><label>Senha<span id="t-pass-hint" style="color:var(--muted)"> — deixe em branco para não alterar</span></label><input id="t-password" type="password"></div>
-    <div class="field" id="t-academia-field" style="display:none">
-      <label>Academia</label>
-      <select id="t-academia" style="width:100%"></select>
-    </div>
-    <div class="field checkbox-row" id="t-active-row">
-      <input type="checkbox" id="t-active" checked>
-      <label for="t-active">Conta ativa</label>
-    </div>
+    <div class="field"><label>Senha<span id="t-pass-hint" class="hint"> — em branco para não alterar</span></label><input id="t-password" type="password"></div>
+    <div class="field super-only" id="t-academia-field" style="display:none"><label>Academia</label><select id="t-academia"></select></div>
+    <div class="field checkbox-row" id="t-active-row"><input type="checkbox" id="t-active" checked><label for="t-active">Conta ativa</label></div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeTrainerModal()">Cancelar</button>
+      <button class="btn btn-danger btn-sm" id="t-delete" style="display:none;margin-right:auto" onclick="deleteTrainer()">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-trainer')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveTrainer()">Salvar</button>
     </div>
   </div>
 </div>
 
 <!-- ── Modal: Academia ────────────────────────────────────────────────────── -->
-<div id="modal-academia" class="modal-backdrop" onclick="if(event.target===this)closeAcademiaModal()">
+<div id="modal-academia" class="modal-backdrop" onclick="if(event.target===this)closeModal('modal-academia')">
   <div class="modal-box">
-    <div class="modal-header">
-      <h2 id="academia-modal-title">Nova Academia</h2>
-      <button class="modal-close" onclick="closeAcademiaModal()">×</button>
-    </div>
+    <div class="modal-header"><h2 id="academia-modal-title">Nova academia</h2><button class="modal-close" onclick="closeModal('modal-academia')">×</button></div>
     <div class="field"><label>Nome</label><input id="a-nome" type="text"></div>
     <div class="field"><label>Código (identificador único)</label><input id="a-codigo" type="text" autocapitalize="characters" style="text-transform:uppercase" placeholder="Ex: ACADEMIA01"></div>
-    <div class="field checkbox-row" id="a-active-row" style="display:none">
-      <input type="checkbox" id="a-active" checked>
-      <label for="a-active">Ativa</label>
-    </div>
+    <div class="field checkbox-row" id="a-active-row" style="display:none"><input type="checkbox" id="a-active" checked><label for="a-active">Ativa</label></div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeAcademiaModal()">Cancelar</button>
+      <button class="btn btn-danger btn-sm" id="a-delete" style="display:none;margin-right:auto" onclick="deleteAcademia()">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-academia')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveAcademia()">Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- ── Modal: Workouts ────────────────────────────────────────────────────── -->
-<div id="modal-workout" class="modal-backdrop" onclick="if(event.target===this)closeWorkoutModal()">
-  <div class="modal-box wide">
-    <div class="modal-header">
-      <h2 id="workout-modal-title">Treinos</h2>
-      <button class="modal-close" onclick="closeWorkoutModal()">×</button>
-    </div>
-
-    <div class="expiry-row">
-      <label>Validade do Plano:</label>
-      <input id="w-expires" type="date" style="max-width:180px">
-      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('w-expires').value=''">Sem validade</button>
-      <button class="btn btn-warning btn-sm" onclick="saveExpiry()">Salvar Validade</button>
-    </div>
-
-    <div class="workout-tabs" id="workout-tabs"></div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <span id="workout-tab-name" style="color:var(--muted);font-size:13px"></span>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-secondary btn-sm" onclick="resetWorkouts()" title="Restaurar treinos padrão">↺ Padrão</button>
-        <button class="btn btn-primary btn-sm" onclick="openExerciseModal(-1)">+ Exercício</button>
-      </div>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>#</th><th>Nome</th><th>Tipo</th><th>Séries</th><th>Reps</th><th>Carga</th><th>Desc.</th><th>Ações</th></tr>
-        </thead>
-        <tbody id="exercises-tbody"></tbody>
-      </table>
-      <div id="exercises-empty" class="empty-state" style="display:none">Nenhum exercício neste treino.</div>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeWorkoutModal()">Fechar</button>
-      <button class="btn btn-primary" onclick="saveWorkouts()">💾 Salvar Treinos</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── Modal: Exercise ────────────────────────────────────────────────────── -->
-<div id="modal-exercise" class="modal-backdrop" onclick="if(event.target===this)closeExerciseModal()">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2 id="ex-modal-title">Exercício</h2>
-      <button class="modal-close" onclick="closeExerciseModal()">×</button>
-    </div>
-    <div class="field"><label>Nome</label><input id="ex-nome" type="text"></div>
-    <div class="field"><label>Tipo (grupo muscular)</label><input id="ex-tipo" type="text"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="field"><label>Séries</label><input id="ex-series" type="number" min="1"></div>
-      <div class="field"><label>Reps (ex: 8-12)</label><input id="ex-reps" type="text"></div>
-      <div class="field"><label>Carga (kg)</label><input id="ex-carga" type="number" min="0"></div>
-      <div class="field"><label>Descanso (s)</label><input id="ex-descanso" type="number" min="0"></div>
-    </div>
-    <div class="field"><label>Mensagem / Instrução</label><input id="ex-msg" type="text"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeExerciseModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveExercise()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── Toast ──────────────────────────────────────────────────────────────── -->
 <div id="toast"></div>
-
 <script src="/static/js/admin.js"></script>
 </body>
 </html>

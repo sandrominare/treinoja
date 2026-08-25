@@ -452,6 +452,172 @@ def delete_trainer(
     return {"ok": True}
 
 
+# ── Stats (dashboard / frequência) ────────────────────────────────────────────
+
+def _scoped_users(admin: Admin, db: Session):
+    q = db.query(User)
+    if not _is_super(admin):
+        q = q.filter(User.academia_id == admin.academia_id)
+    return q.all()
+
+
+@router.get("/stats")
+def stats(admin: Admin = Depends(get_current_admin), db: Session = Depends(get_db)):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    today = now.date()
+    users = _scoped_users(admin, db)
+    user_ids = [u.id for u in users]
+    names = {u.id: u.username for u in users}
+
+    since = now - timedelta(days=35)
+    hist = (
+        db.query(WorkoutHistory)
+        .filter(WorkoutHistory.user_id.in_(user_ids), WorkoutHistory.completed_at >= since)
+        .order_by(WorkoutHistory.completed_at.desc())
+        .all()
+    ) if user_ids else []
+
+    last_by_user = {}
+    for h in hist:
+        if h.user_id not in last_by_user:
+            last_by_user[h.user_id] = h.completed_at
+    # considera também treinos anteriores à janela de 35 dias
+    for u in users:
+        if u.id not in last_by_user:
+            older = (
+                db.query(WorkoutHistory)
+                .filter(WorkoutHistory.user_id == u.id)
+                .order_by(WorkoutHistory.completed_at.desc())
+                .first()
+            )
+            if older:
+                last_by_user[u.id] = older.completed_at
+
+    def user_status(u: User) -> str:
+        expired = u.plan_expires_at is not None and u.plan_expires_at < now
+        if not u.is_active or expired:
+            return "inativo"
+        last = last_by_user.get(u.id)
+        if last is None:
+            created = u.created_at or now
+            return "novo" if (now - created).days <= 14 else "em_risco"
+        return "em_risco" if (now - last).days > 7 else "ativo"
+
+    statuses = {u.id: user_status(u) for u in users}
+    active_users = [u for u in users if statuses[u.id] != "inativo"]
+
+    week_ago = now - timedelta(days=7)
+    trained_week = {h.user_id for h in hist if h.completed_at >= week_ago}
+
+    checkins_by_day = {}
+    for h in hist:
+        d = h.completed_at.date().isoformat()
+        checkins_by_day[d] = checkins_by_day.get(d, 0) + 1
+
+    today_list = [
+        {
+            "user_id": h.user_id,
+            "username": names.get(h.user_id, "?"),
+            "treino": h.treino,
+            "completed_at": h.completed_at.isoformat(),
+            "duration": h.duration or 0,
+        }
+        for h in hist if h.completed_at.date() == today
+    ]
+
+    month_ago = now - timedelta(days=28)
+    month_counts = {}
+    for h in hist:
+        if h.completed_at >= month_ago:
+            month_counts[h.user_id] = month_counts.get(h.user_id, 0) + 1
+
+    attention = [
+        {
+            "user_id": u.id,
+            "username": u.username,
+            "last_workout": last_by_user[u.id].isoformat() if u.id in last_by_user else None,
+            "days_absent": (now - last_by_user[u.id]).days if u.id in last_by_user else None,
+        }
+        for u in active_users if statuses[u.id] in ("em_risco",)
+    ]
+    attention.sort(key=lambda x: -(x["days_absent"] or 999))
+
+    recent = [
+        {
+            "username": names.get(h.user_id, "?"),
+            "treino": h.treino,
+            "completed_at": h.completed_at.isoformat(),
+            "duration": h.duration or 0,
+        }
+        for h in hist[:10]
+    ]
+
+    return {
+        "active_students": len(active_users),
+        "workouts_today": len(today_list),
+        "weekly_frequency_pct": round(100 * len(trained_week) / len(active_users)) if active_users else 0,
+        "at_risk": sum(1 for s in statuses.values() if s == "em_risco"),
+        "status_counts": {
+            "todos": len(users),
+            "ativos": sum(1 for s in statuses.values() if s == "ativo"),
+            "novos": sum(1 for s in statuses.values() if s == "novo"),
+            "em_risco": sum(1 for s in statuses.values() if s == "em_risco"),
+            "inativos": sum(1 for s in statuses.values() if s == "inativo"),
+        },
+        "user_statuses": statuses,
+        "month_counts": month_counts,
+        "checkins_by_day": checkins_by_day,
+        "today_checkins": today_list,
+        "attention": attention[:8],
+        "recent_activity": recent,
+        "frequent_week": len(trained_week),
+        "absent_week": max(0, len(active_users) - len(trained_week)),
+    }
+
+
+@router.get("/users/{user_id}/history")
+def user_history(
+    user_id: int,
+    admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, "Usuário não encontrado")
+    _assert_user_access(user, admin)
+    rows = (
+        db.query(WorkoutHistory)
+        .filter(WorkoutHistory.user_id == user_id)
+        .order_by(WorkoutHistory.completed_at.desc())
+        .all()
+    )
+    return [
+        {"treino": h.treino, "completed_at": h.completed_at.isoformat(), "duration": h.duration or 0}
+        for h in rows
+    ]
+
+
+@router.get("/exercise-library")
+def exercise_library(admin: Admin = Depends(get_current_admin)):
+    data = _load_default_data()
+    seen, out = set(), []
+    for letter in sorted(data.keys()):
+        for ex in data[letter].get("exercicios", []):
+            key = ex.get("nome", "").strip().lower()
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            out.append({
+                "nome": ex.get("nome"),
+                "tipo": ex.get("tipo") or "Outro",
+                "series": ex.get("series", 3),
+                "reps": ex.get("reps", "8-12"),
+                "descanso": ex.get("descanso", 60),
+            })
+    out.sort(key=lambda e: (e["tipo"], e["nome"]))
+    return out
+
+
 # ── Workouts per user ─────────────────────────────────────────────────────────
 
 @router.get("/users/{user_id}/workouts")
